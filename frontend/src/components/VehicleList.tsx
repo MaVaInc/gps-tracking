@@ -28,9 +28,6 @@ const VehicleList: React.FC<VehicleListProps> = ({ vehicles, selectedVehicle, on
                 throw new Error(errorData.detail || 'Failed to control vehicle');
             }
 
-            const data = await response.json();
-            console.log('Control response:', data);
-
             // Ждем немного для визуального эффекта
             await new Promise(resolve => setTimeout(resolve, 500));
 

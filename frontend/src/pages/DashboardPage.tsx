@@ -13,12 +13,13 @@ const DashboardPage: React.FC = () => {
 
     // Периодическое обновление данных
     useEffect(() => {
-        fetchVehicles(); // Начальная загрузка
+        // Начальная загрузка
+        fetchVehicles();
 
-        // Обновление каждые 5 секунд
+        // Обновление каждые 2 секунды
         const interval = setInterval(() => {
             fetchVehicles();
-        }, 5000);
+        }, 2000);
 
         return () => clearInterval(interval);
     }, []);
@@ -26,16 +27,21 @@ const DashboardPage: React.FC = () => {
     const fetchVehicles = async () => {
         try {
             const response = await fetch(`${API_URL}/api/vehicles/`);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
             const data = await response.json();
             setVehicles(data);
-            
+
             // Обновляем выбранную машину если она есть
             if (selectedVehicle) {
                 const updated = data.find(v => v.id === selectedVehicle.id);
-                if (updated) setSelectedVehicle(updated);
+                if (updated) {
+                    setSelectedVehicle(updated);
+                }
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error fetching vehicles:', error);
         }
     };
 
