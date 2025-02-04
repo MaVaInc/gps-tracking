@@ -72,12 +72,21 @@ def update_position(vehicle: dict):
     
     # Отправляем бинарные данные
     try:
+        print(f"""
+Отправка данных для {vehicle['device_id']}:
+- Позиция: {vehicle['current_lat']}, {vehicle['current_lng']}
+- Скорость: {speed}
+- Timestamp: {timestamp}
+        """)
+        
         response = requests.post(
             f'{API_URL}/gps/binary_data',
             data=binary_data,
             headers={'Content-Type': 'application/octet-stream'}
         )
         print(f"Location sent for {vehicle['device_id']}: {response.status_code}")
+        if response.status_code != 200:
+            print(f"Error response: {response.text}")
         
     except Exception as e:
         print(f"Error sending location for {vehicle['device_id']}: {e}")

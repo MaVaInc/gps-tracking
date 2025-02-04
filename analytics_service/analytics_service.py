@@ -64,10 +64,24 @@ def calculate_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) ->
 @app.post("/gps/binary_data")
 async def receive_binary_data(request: Request, db: Session = Depends(get_db)):
     try:
+        print("Получен новый GPS пакет")
         raw_data = await request.body()
+        print(f"Размер сжатых данных: {len(raw_data)} байт")
+        
         data = zlib.decompress(raw_data)
+        print(f"Размер распакованных данных: {len(data)} байт")
+        
         device_id, lat, lng, speed, timestamp = struct.unpack("16sddfI", data)
         device_id = device_id.decode('utf-8').strip('\0').lower().replace('b-', '')
+        
+        print(f"""
+Распакованные данные:
+- device_id: {device_id}
+- lat: {lat}
+- lng: {lng}
+- speed: {speed}
+- timestamp: {datetime.fromtimestamp(timestamp)}
+        """)
 
         vehicle = db.query(Vehicle).filter(Vehicle.device_id == device_id).first()
         if not vehicle:
@@ -77,6 +91,8 @@ async def receive_binary_data(request: Request, db: Session = Depends(get_db)):
             for v in vehicles:
                 print(f"- {v.device_id}: {v.name}")
             raise HTTPException(status_code=404, detail=f"Vehicle not found: {device_id}")
+        
+        print(f"Найдено транспортное средство: {vehicle.name} (ID: {vehicle.id})")
         
         # Получаем начало текущего дня
         today_start = datetime.combine(datetime.today(), time.min)
@@ -119,11 +135,21 @@ async def receive_binary_data(request: Request, db: Session = Depends(get_db)):
             vehicle.last_update = datetime.fromtimestamp(timestamp)
             vehicle.status = 'online'
         
+        print(f"""
+Обновлены данные для {vehicle.name}:
+- Новая позиция: {lat}, {lng}
+- Скорость: {speed}
+- Статус: {vehicle.status}
+- Пробег: {vehicle.mileage}
+- Дневной пробег: {vehicle.daily_mileage}
+        """)
+        
         db.commit()
         return {"status": "success"}
         
     except Exception as e:
         print(f"Error processing GPS data: {e}")
+        print(f"Stack trace:", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 # Добавим модель для валидации данных
