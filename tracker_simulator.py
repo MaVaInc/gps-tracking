@@ -2,15 +2,17 @@ import random
 import math
 import time
 import requests
+import struct
+import zlib
 from datetime import datetime
 
 # Конфигурация
-API_URL = 'http://94.156.114.240:8001'  # URL аналитического сервера
+API_URL = 'http://localhost:8001'  # URL аналитического сервера
 
 VEHICLES = [
     {
         "id": 1,
-        "device_id": "eqw1054",
+        "device_id": "b-eqw1054",  # добавляем префикс для совместимости
         "current_lat": 52.52,
         "current_lng": 13.405,
         "direction": random.uniform(0, 2 * math.pi),
@@ -18,13 +20,26 @@ VEHICLES = [
     },
     {
         "id": 2,
-        "device_id": "eqe2152",
+        "device_id": "b-eqe2152",
         "current_lat": 52.51,
         "current_lng": 13.402,
         "direction": random.uniform(0, 2 * math.pi),
         "enabled": True
     }
 ]
+
+def pack_gps_data(device_id: str, lat: float, lng: float, speed: float, timestamp: int) -> bytes:
+    """Упаковываем GPS данные в бинарный формат"""
+    # Формат: device_id (16 bytes), lat (double), lng (double), speed (float), timestamp (uint32)
+    binary_data = struct.pack("16sddfI", 
+        device_id.encode(), # 16 байт для ID
+        lat,               # 8 байт для широты
+        lng,               # 8 байт для долготы
+        speed,            # 4 байта для скорости
+        timestamp         # 4 байта для времени
+    )
+    # Сжимаем данные
+    return zlib.compress(binary_data)
 
 def update_position(vehicle: dict):
     if not vehicle["enabled"]:
@@ -43,14 +58,25 @@ def update_position(vehicle: dict):
     vehicle["current_lat"] += math.sin(vehicle["direction"]) * speed_deg
     vehicle["current_lng"] += math.cos(vehicle["direction"]) * speed_deg
     
-    # Отправляем данные через API
+    # Получаем текущее время в Unix timestamp
+    timestamp = int(datetime.now().timestamp())
+    
+    # Упаковываем данные в бинарный формат
+    binary_data = pack_gps_data(
+        vehicle['device_id'],
+        vehicle['current_lat'],
+        vehicle['current_lng'],
+        speed,
+        timestamp
+    )
+    
+    # Отправляем бинарные данные
     try:
-        response = requests.post(f'{API_URL}/location', json={
-            'device_id': vehicle['device_id'],
-            'latitude': vehicle['current_lat'],
-            'longitude': vehicle['current_lng'],
-            'speed': speed
-        })
+        response = requests.post(
+            f'{API_URL}/gps/binary_data',
+            data=binary_data,
+            headers={'Content-Type': 'application/octet-stream'}
+        )
         print(f"Location sent for {vehicle['device_id']}: {response.status_code}")
         
     except Exception as e:
