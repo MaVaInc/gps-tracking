@@ -44,31 +44,11 @@ def process_packet(packet: dict):
     """Обработка распакованного пакета"""
     db = SessionLocal()
     try:
-        vehicle = db.query(Vehicle).filter(Vehicle.device_id == packet['device_id']).first()
-        if not vehicle:
-            print(f"Unknown device_id: {packet['device_id']}")
-            return
-            
         if packet['type'] == 'location':
-            # Обновляем позицию и скорость
-            vehicle.current_location_lat = packet['latitude']
-            vehicle.current_location_lng = packet['longitude']
-            vehicle.speed = packet['speed']
-            vehicle.last_update = datetime.utcnow()
-            
-            # Сохраняем историю
-            history = LocationHistory(
-                vehicle_id=vehicle.id,
-                lat=packet['latitude'],
-                lng=packet['longitude'],
-                speed=packet['speed'],
-                timestamp=datetime.utcnow()
-            )
-            db.add(history)
+            handle_location_packet(db, packet['device_id'], packet['latitude'], packet['longitude'], packet['speed'])
             
         elif packet['type'] == 'status':
-            vehicle.status = 'online' if packet['enabled'] else 'disabled'
-            vehicle.last_update = datetime.utcnow()
+            handle_status_packet(db, packet['device_id'], packet['enabled'])
             
         db.commit()
         print(f"Processed {packet['type']} update for {packet['device_id']}")
@@ -78,6 +58,40 @@ def process_packet(packet: dict):
         db.rollback()
     finally:
         db.close()
+
+def handle_location_packet(session, device_id: str, lat: float, lng: float, speed: float):
+    """Обрабатываем пакет с локацией"""
+    # Ищем машину по частичному совпадению device_id
+    vehicle = session.query(Vehicle).filter(Vehicle.device_id.like(f'%{device_id}%')).first()
+    if vehicle:
+        # Обновляем позицию и скорость
+        vehicle.current_location_lat = lat
+        vehicle.current_location_lng = lng
+        vehicle.speed = speed
+        vehicle.last_update = datetime.now()
+        
+        # Обновляем дневной пробег
+        if vehicle.daily_mileage is None:
+            vehicle.daily_mileage = 0
+        # Примерный расчет пройденного расстояния
+        distance = speed * (5/3600)  # km за 5 секунд
+        vehicle.daily_mileage += distance
+        vehicle.mileage += distance
+        
+        session.commit()
+    else:
+        print(f"Vehicle not found for device_id containing: {device_id}")
+
+def handle_status_packet(session, device_id: str, enabled: bool):
+    """Обрабатываем пакет со статусом"""
+    # Ищем машину по частичному совпадению device_id
+    vehicle = session.query(Vehicle).filter(Vehicle.device_id.like(f'%{device_id}%')).first()
+    if vehicle:
+        vehicle.status = 'online' if enabled else 'disabled'
+        vehicle.last_update = datetime.now()
+        session.commit()
+    else:
+        print(f"Vehicle not found for device_id containing: {device_id}")
 
 def main():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from backend.database import SessionLocal
-from backend.models import Vehicle, Part
+from backend.database import SessionLocal, engine
+from backend.models import Base, Vehicle, Part
 
-def seed_db():
-    print("Starting database seeding...")  # Добавляем логирование
+def seed_database():
+    Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     
     try:
@@ -40,32 +40,91 @@ def seed_db():
         # Создаем тестовые машины
         vehicles = [
             Vehicle(
-                name="Toyota Proace",
-                year=2020,
-                plate_number="AA123BB",
-                driver_name="Иван Иванов",
-                status="online",
+                name="Proace",
+                device_id="eqw1054",
+                driver_name="Hans Schmidt",
+                plate_number="B-EQW1054",
+                year=2018,
+                status="disabled",
+                mileage=120000,
+                daily_mileage=0,
                 speed=0,
-                mileage=50000,
-                current_location_lat=55.7558,
-                current_location_lng=37.6173,
-                last_update=datetime.utcnow(),
-                next_tuv=datetime.utcnow() + timedelta(days=180)
+                current_location_lat=52.52,
+                current_location_lng=13.405,
+                
+                # Интервалы обслуживания
+                oil_change_interval=10000,
+                brake_change_interval=20000,
+                timing_belt_interval=60000,
+                filter_change_interval=15000,
+                clutch_interval=80000,
+                battery_interval=40000,
+                tires_interval=30000,
+                shock_absorbers_interval=50000,
+                
+                # Последние замены
+                last_oil_change=115000,
+                last_brake_change=115000,
+                last_timing_belt_change=90000,
+                last_filter_change=117000,
+                last_clutch_change=80000,
+                last_battery_change=100000,
+                last_tires_change=105000,
+                last_shock_absorbers_change=95000,
+                
+                # Следующие замены
+                next_oil_change=125000,
+                next_brake_change=135000,
+                next_timing_belt_change=150000,
+                next_filter_change=132000,
+                next_clutch_change=160000,
+                next_battery_change=140000,
+                next_tires_change=135000,
+                next_shock_absorbers_change=145000
             ),
             Vehicle(
-                name="Ford Transit",
+                name="Transit",
+                device_id="eqe2152",
+                driver_name="Klaus Weber",
+                plate_number="B-EQE2152",
                 year=2019,
-                plate_number="BB456CC",
-                driver_name="Петр Петров",
-                status="offline",
+                status="online",
+                mileage=80000,
+                daily_mileage=0,
                 speed=0,
-                mileage=75000,
-                current_location_lat=59.9343,
-                current_location_lng=30.3351,
-                last_update=datetime.utcnow(),
-                next_tuv=datetime.utcnow() + timedelta(days=90)
-            ),
-            # Добавьте другие машины по необходимости
+                current_location_lat=52.51,
+                current_location_lng=13.402,
+                
+                # Интервалы обслуживания
+                oil_change_interval=10000,
+                brake_change_interval=20000,
+                timing_belt_interval=60000,
+                filter_change_interval=15000,
+                clutch_interval=80000,
+                battery_interval=40000,
+                tires_interval=30000,
+                shock_absorbers_interval=50000,
+                
+                # Последние замены
+                last_oil_change=75000,
+                last_brake_change=70000,
+                last_timing_belt_change=60000,
+                last_filter_change=75000,
+                last_clutch_change=0,
+                last_battery_change=40000,
+                last_tires_change=60000,
+                last_shock_absorbers_change=50000,
+                
+                # Следующие замены
+                next_oil_change=85000,
+                next_brake_change=90000,
+                next_timing_belt_change=120000,
+                next_filter_change=90000,
+                next_clutch_change=80000,
+                next_battery_change=80000,
+                next_tires_change=90000,
+                next_shock_absorbers_change=100000
+            )
         ]
         
         for vehicle in vehicles:
@@ -85,4 +144,4 @@ def seed_db():
         db.close()
 
 if __name__ == "__main__":
-    seed_db() 
+    seed_database() 

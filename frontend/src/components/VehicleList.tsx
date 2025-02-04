@@ -36,7 +36,7 @@ const VehicleList: React.FC<VehicleListProps> = ({ vehicles, selectedVehicle, on
     };
 
     return (
-        <div className="space-y-2 p-2">
+        <div className="space-y-2 p-2 pb-16 overflow-y-auto max-h-[calc(100vh-3.5rem)]">
             {vehicles.map((vehicle) => (
                 <div
                     key={vehicle.id}
