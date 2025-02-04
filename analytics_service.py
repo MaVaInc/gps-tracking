@@ -18,26 +18,45 @@ SessionLocal = sessionmaker(bind=engine)
 def handle_client(client_socket: socket.socket):
     """Обработка подключения от трекера"""
     try:
+        print("New client connected")
         while True:
             # Читаем длину пакета (2 байта)
             length_data = client_socket.recv(2)
             if not length_data:
+                print("Client disconnected")
                 break
                 
             length = struct.unpack('!H', length_data)[0]
+            print(f"Received packet length: {length}")
             
             # Читаем сам пакет
             data = client_socket.recv(length)
             if not data:
+                print("Empty packet received")
                 break
                 
-            # Обрабатываем пакет
-            packet = unpack_packet(data)
-            process_packet(packet)
+            print(f"Received raw data: {data.hex()}")
+            
+            # Первый байт - тип пакета
+            packet_type = data[0]
+            print(f"Packet type: {packet_type}")
+            
+            if packet_type == 1:  # Локация
+                device_id = data[1:9].decode().rstrip('\0')
+                lat, lng, speed = struct.unpack('!3f', data[9:])
+                print(f"Location packet: device={device_id}, lat={lat}, lng={lng}, speed={speed}")
+                handle_location_packet(SessionLocal(), device_id, lat, lng, speed)
+                
+            elif packet_type == 2:  # Статус
+                device_id = data[1:9].decode().rstrip('\0')
+                enabled = bool(data[9])
+                print(f"Status packet: device={device_id}, enabled={enabled}")
+                handle_status_packet(SessionLocal(), device_id, enabled)
             
     except Exception as e:
         print(f"Error handling client: {e}")
     finally:
+        print("Client handler finished")
         client_socket.close()
 
 def process_packet(packet: dict):
