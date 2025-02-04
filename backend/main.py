@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket, HTTPException, Depends
+from fastapi import FastAPI, WebSocket, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
@@ -16,6 +16,7 @@ from sqlalchemy import create_engine
 from pydantic import BaseModel
 import struct
 import zlib
+import traceback
 
 load_dotenv()
 
@@ -430,7 +431,8 @@ async def receive_binary_data(request: Request, db: Session = Depends(get_db)):
         
     except Exception as e:
         print(f"Error processing GPS data: {e}")
-        print(f"Stack trace:", exc_info=True)
+        print("Stack trace:")
+        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/health")
