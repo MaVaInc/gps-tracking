@@ -182,6 +182,20 @@ async def control_vehicle(vehicle_id: int, action: ControlAction, db: Session = 
         print(f"Error controlling vehicle: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.on_event("startup")
+async def startup_event():
+    print("Starting analytics service...")
+    print(f"Database URL: {SQLALCHEMY_DATABASE_URL}")
+    try:
+        db = SessionLocal()
+        vehicles = db.query(Vehicle).all()
+        print(f"Connected to database. Found {len(vehicles)} vehicles")
+        for v in vehicles:
+            print(f"- {v.device_id}: {v.name}")
+        db.close()
+    except Exception as e:
+        print(f"Error connecting to database: {e}")
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001, reload=True) 
+    uvicorn.run(app, host="0.0.0.0", port=8001) 
