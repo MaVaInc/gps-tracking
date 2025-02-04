@@ -86,7 +86,7 @@ sudo bash -c 'cat > /etc/nginx/sites-available/gps << EOL
 server {
     listen 80;
     listen [::]:80;
-    server_name anidapha.us 94.156.114.240;
+    server_name anidapha.us;
 
     root /var/www/gps/frontend/dist;
     index index.html;
@@ -97,21 +97,56 @@ server {
 
     location /api {
         proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
     }
 
     location /socket.io {
-        proxy_pass http://localhost:8000;
+        proxy_pass http://localhost:8001;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
         proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    }
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name 94.156.114.240;
+
+    root /var/www/gps/frontend/dist;
+    index index.html;
+
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    location /api {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    }
+
+    location /socket.io {
+        proxy_pass http://localhost:8001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
     }
 }
 EOL'
 
-# Проверяем и перезапускаем
+# Проверяем и применяем конфигурацию
 sudo nginx -t && sudo systemctl restart nginx
 
 # Получаем SSL сертификат только для домена
