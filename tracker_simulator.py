@@ -7,8 +7,7 @@ import zlib
 from datetime import datetime
 
 # Конфигурация
-API_URL = 'http://localhost:8001'  # URL аналитического сервера
-
+API_URL = 'http://anidapha.us:8001'  # Ваш домен
 VEHICLES = [
     {
         "id": 1,

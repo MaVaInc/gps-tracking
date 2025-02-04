@@ -14,7 +14,7 @@ from backend.database import Base
 from backend.models import Vehicle, LocationHistory
 
 # Используем ту же конфигурацию БД, что и в main.py
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+SQLALCHEMY_DATABASE_URL = "sqlite:////var/www/gps/test.db"  # Абсолютный путь к БД
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, 
     connect_args={"check_same_thread": False}
