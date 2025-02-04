@@ -5,6 +5,7 @@ import VehicleModal from '../components/VehicleModal';
 import AddVehicleModal from '../components/AddVehicleModal';
 import AddPartModal from '../components/AddPartModal';
 import PartDetailsModal from '../components/PartDetailsModal';
+import { API_URL } from '../config';
 
 const AdminPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'vehicles' | 'parts'>('vehicles');
@@ -27,8 +28,8 @@ const AdminPage: React.FC = () => {
         try {
             setLoading(true);
             const [vehiclesResponse, partsResponse] = await Promise.all([
-                fetch('http://localhost:8000/api/vehicles/'),
-                fetch('http://localhost:8000/api/parts/')
+                fetch(`${API_URL}/api/vehicles/`),
+                fetch(`${API_URL}/api/parts/`)
             ]);
             const vehiclesData = await vehiclesResponse.json();
             const partsData = await partsResponse.json();
@@ -53,7 +54,7 @@ const AdminPage: React.FC = () => {
         if (!selectedVehicle) return;
 
         try {
-            const response = await fetch(`http://localhost:8000/api/vehicles/${selectedVehicle.id}`, {
+            const response = await fetch(`${API_URL}/api/vehicles/${selectedVehicle.id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -74,7 +75,7 @@ const AdminPage: React.FC = () => {
         if (!selectedVehicle) return;
 
         try {
-            const response = await fetch(`http://localhost:8000/api/vehicles/${selectedVehicle.id}`, {
+            const response = await fetch(`${API_URL}/api/vehicles/${selectedVehicle.id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -95,7 +96,7 @@ const AdminPage: React.FC = () => {
 
     const handleAddVehicle = async (data: any) => {
         try {
-            const response = await fetch('http://localhost:8000/api/vehicles/', {
+            const response = await fetch(`${API_URL}/api/vehicles/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -113,7 +114,7 @@ const AdminPage: React.FC = () => {
 
     const handleAddPart = async (data: any) => {
         try {
-            const response = await fetch('http://localhost:8000/api/parts/', {
+            const response = await fetch(`${API_URL}/api/parts/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

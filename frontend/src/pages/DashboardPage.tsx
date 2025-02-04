@@ -5,6 +5,7 @@ import VehicleList from '../components/VehicleList';
 import Layout from '../components/Layout';
 import Navbar from '../components/Navbar';
 import { io, Socket } from 'socket.io-client';
+import { API_URL, SOCKET_URL } from '../config';
 
 const DashboardPage: React.FC = () => {
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -14,7 +15,7 @@ const DashboardPage: React.FC = () => {
 
     // Инициализация Socket.IO при монтировании компонента
     useEffect(() => {
-        const newSocket = io('http://localhost:8001', {
+        const newSocket = io(SOCKET_URL, {
             transports: ['websocket'],
             upgrade: false
         });
@@ -60,7 +61,7 @@ const DashboardPage: React.FC = () => {
 
     const fetchVehicles = async () => {
         try {
-            const response = await fetch('http://localhost:8000/api/vehicles/');
+            const response = await fetch(`${API_URL}/api/vehicles/`);
             const data = await response.json();
             setVehicles(data);
         } catch (error) {

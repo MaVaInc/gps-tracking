@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Vehicle } from '../types/types';
+import { API_URL } from '../config';
 
 interface VehicleListProps {
     vehicles: Vehicle[];
@@ -14,7 +15,7 @@ const VehicleList: React.FC<VehicleListProps> = ({ vehicles, selectedVehicle, on
         try {
             setLoadingStates(prev => ({ ...prev, [vehicleId]: true }));
 
-            const response = await fetch(`http://localhost:8001/api/vehicles/${vehicleId}/control`, {
+            const response = await fetch(`${API_URL}/api/vehicles/${vehicleId}/control`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
