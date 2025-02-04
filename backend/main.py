@@ -14,6 +14,8 @@ from dotenv import load_dotenv
 import os
 from sqlalchemy import create_engine
 from pydantic import BaseModel
+import struct
+import zlib
 
 load_dotenv()
 
@@ -338,6 +340,97 @@ async def control_vehicle(vehicle_id: int, action: ControlAction, db: Session = 
         
     except Exception as e:
         db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/gps/binary_data")
+async def receive_binary_data(request: Request, db: Session = Depends(get_db)):
+    try:
+        print("Получен новый GPS пакет")
+        raw_data = await request.body()
+        print(f"Размер сжатых данных: {len(raw_data)} байт")
+        
+        data = zlib.decompress(raw_data)
+        print(f"Размер распакованных данных: {len(data)} байт")
+        
+        device_id, lat, lng, speed, timestamp = struct.unpack("16sddfI", data)
+        device_id = device_id.decode('utf-8').strip('\0').lower().replace('b-', '')
+        
+        print(f"""
+Распакованные данные:
+- device_id: {device_id}
+- lat: {lat}
+- lng: {lng}
+- speed: {speed}
+- timestamp: {datetime.fromtimestamp(timestamp)}
+        """)
+
+        vehicle = db.query(Vehicle).filter(Vehicle.device_id == device_id).first()
+        if not vehicle:
+            print(f"Vehicle not found: {device_id}")
+            print("Available vehicles in DB:")
+            vehicles = db.query(Vehicle).all()
+            for v in vehicles:
+                print(f"- {v.device_id}: {v.name}")
+            raise HTTPException(status_code=404, detail=f"Vehicle not found: {device_id}")
+        
+        print(f"Найдено транспортное средство: {vehicle.name} (ID: {vehicle.id})")
+        
+        # Получаем начало текущего дня
+        today_start = datetime.combine(datetime.today(), time.min)
+        
+        # Получаем последнюю запись о местоположении за сегодня
+        last_location = db.query(LocationHistory)\
+            .filter(LocationHistory.vehicle_id == vehicle.id)\
+            .filter(LocationHistory.timestamp >= today_start)\
+            .order_by(LocationHistory.timestamp.desc())\
+            .first()
+
+        # Сохраняем новую запись о местоположении
+        new_location = LocationHistory(
+            vehicle_id=vehicle.id,
+            lat=lat,
+            lng=lng,
+            timestamp=datetime.fromtimestamp(timestamp)
+        )
+        db.add(new_location)
+
+        # Обновляем данные только если машина не отключена
+        if vehicle.status != 'disabled':
+            # Рассчитываем пройденное расстояние
+            if last_location:
+                distance = calculate_distance(
+                    last_location.lat,
+                    last_location.lng,
+                    lat,
+                    lng
+                )
+                # Обновляем дневной пробег
+                vehicle.daily_mileage = (vehicle.daily_mileage or 0) + distance
+                # Обновляем общий пробег
+                vehicle.mileage = (vehicle.mileage or 0) + distance
+
+            # Обновляем текущие координаты и статус
+            vehicle.current_location_lat = lat
+            vehicle.current_location_lng = lng
+            vehicle.speed = speed
+            vehicle.last_update = datetime.fromtimestamp(timestamp)
+            vehicle.status = 'online'
+        
+        print(f"""
+Обновлены данные для {vehicle.name}:
+- Новая позиция: {lat}, {lng}
+- Скорость: {speed}
+- Статус: {vehicle.status}
+- Пробег: {vehicle.mileage}
+- Дневной пробег: {vehicle.daily_mileage}
+        """)
+        
+        db.commit()
+        return {"status": "success"}
+        
+    except Exception as e:
+        print(f"Error processing GPS data: {e}")
+        print(f"Stack trace:", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 # Запускаем приложение с Socket.IO

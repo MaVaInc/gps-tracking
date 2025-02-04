@@ -7,7 +7,7 @@ import zlib
 from datetime import datetime
 
 # Конфигурация
-API_URL = 'http://anidapha.us:8001'  # Ваш домен
+API_URL = 'http://anidapha.us:8000'  # Порт 8000 вместо 8001
 VEHICLES = [
     {
         "id": 1,
