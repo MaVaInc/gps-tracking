@@ -22,8 +22,8 @@ class Vehicle:
     def should_save_history(self) -> bool:
         """Проверяем, нужно ли сохранять точку в историю"""
         now = datetime.now()
-        # Сохраняем каждые 5 минут
-        return (now - self.last_history_save) >= timedelta(minutes=5)
+        # Сохраняем каждые 30 секунд для тестирования
+        return (now - self.last_history_save) >= timedelta(seconds=30)
 
     def update_last_save(self):
         self.last_history_save = datetime.now()
@@ -35,14 +35,24 @@ VEHICLES = [
 
 def pack_gps_data(device_id: str, lat: float, lng: float, speed: float, timestamp: int, save_history: bool) -> bytes:
     """Упаковываем GPS данные в бинарный формат"""
-    # Добавляем флаг save_history как uint8 (1 байт)
+    # Проверяем длину device_id
+    device_id = device_id.ljust(16, '\0')  # Дополняем до 16 байт нулями
+    
+    # Структура пакета:
+    # - device_id: 16 байт (строка)
+    # - lat: 8 байт (double)
+    # - lng: 8 байт (double)
+    # - speed: 4 байта (float)
+    # - timestamp: 4 байта (uint32)
+    # - save_history: 1 байт (bool)
+    # Всего: 41 байт
     binary_data = struct.pack("16sddfI?", 
-        device_id.encode(),  # 16 байт для ID
-        lat,                # 8 байт для широты
-        lng,                # 8 байт для долготы
-        speed,             # 4 байта для скорости
-        timestamp,         # 4 байта для времени
-        save_history       # 1 байт для флага сохранения
+        device_id.encode(),  # 16 байт
+        lat,                 # 8 байт
+        lng,                 # 8 байт
+        speed,              # 4 байта
+        timestamp,          # 4 байта
+        save_history        # 1 байт
     )
     return zlib.compress(binary_data)
 

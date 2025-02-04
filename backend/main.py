@@ -381,9 +381,16 @@ async def receive_binary_data(request: Request, db: Session = Depends(get_db)):
         raw_data = await request.body()
         data = zlib.decompress(raw_data)
         
-        # Распаковываем с учетом флага
+        # Проверяем размер данных
+        if len(data) != 41:
+            raise ValueError(f"Invalid data size: {len(data)} bytes, expected 41 bytes")
+            
+        # Распаковываем данные
         device_id, lat, lng, speed, timestamp, save_history = struct.unpack("16sddfI?", data)
         device_id = device_id.decode('utf-8').strip('\0').lower()
+        
+        print(f"Received data: device_id={device_id}, lat={lat}, lng={lng}, speed={speed}, "
+              f"timestamp={timestamp}, save_history={save_history}")
         
         vehicle = db.query(Vehicle).filter(Vehicle.device_id == device_id).first()
         if not vehicle:
