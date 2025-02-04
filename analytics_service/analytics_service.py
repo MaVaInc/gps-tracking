@@ -8,14 +8,22 @@ import os
 import aiohttp
 from pydantic import BaseModel
 from math import radians, sin, cos, sqrt, atan2
+from sqlalchemy import create_engine
 
-from backend.database import SessionLocal, engine
+from backend.database import Base
 from backend.models import Vehicle, LocationHistory
 
-# Убедимся, что путь к БД абсолютный
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Используем ту же конфигурацию БД, что и в main.py
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, 
+    connect_args={"check_same_thread": False}
+)
 print(f"Using database at: {SQLALCHEMY_DATABASE_URL}")
+
+# Создаем сессию для работы с БД
+from sqlalchemy.orm import sessionmaker
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 app = FastAPI()
 
