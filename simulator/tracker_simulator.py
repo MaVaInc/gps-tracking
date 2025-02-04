@@ -1,13 +1,10 @@
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import socket
 import time
 import random
 import math
 import struct
 from datetime import datetime
-from analytics.tracker_protocol import pack_location, pack_status
+from tracker_protocol import pack_location, pack_status
 
 # Конфигурация
 ANALYTICS_HOST = '94.156.114.240'  # IP сервера

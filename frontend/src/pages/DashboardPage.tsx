@@ -75,6 +75,17 @@ const DashboardPage: React.FC = () => {
 
             {vehicleListOpen && (
                 <div className="fixed left-0 top-16 bottom-0 w-80 bg-gray-800 shadow-lg z-[100]">
+                    <div className="flex justify-between items-center p-4 border-b border-gray-700">
+                        <h2 className="text-white font-bold">Vehicles</h2>
+                        <button
+                            onClick={() => setVehicleListOpen(false)}
+                            className="text-gray-400 hover:text-white"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
                     <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
                         <VehicleList 
                             vehicles={vehicles}
