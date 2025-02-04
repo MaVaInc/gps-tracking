@@ -4,59 +4,23 @@ import Map from '../components/Map';
 import VehicleList from '../components/VehicleList';
 import Layout from '../components/Layout';
 import Navbar from '../components/Navbar';
-import { io, Socket } from 'socket.io-client';
-import { API_URL, SOCKET_URL } from '../config';
+import { API_URL } from '../config';
 
 const DashboardPage: React.FC = () => {
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
     const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
     const [vehicleListOpen, setVehicleListOpen] = useState(false);
-    const [socket, setSocket] = useState<Socket | null>(null);
 
-    // Инициализация Socket.IO при монтировании компонента
+    // Периодическое обновление данных
     useEffect(() => {
-        const newSocket = io(SOCKET_URL, {
-            transports: ['websocket'],
-            upgrade: false
-        });
+        fetchVehicles(); // Начальная загрузка
 
-        newSocket.on('connect', () => {
-            console.log('Connected to WebSocket');
-        });
+        // Обновление каждые 5 секунд
+        const interval = setInterval(() => {
+            fetchVehicles();
+        }, 5000);
 
-        newSocket.on('disconnect', () => {
-            console.log('Disconnected from WebSocket');
-        });
-
-        newSocket.on('vehicle_update', (data) => {
-            console.log('Received update:', data);
-            setVehicles(prevVehicles => 
-                prevVehicles.map(vehicle => 
-                    vehicle.id === data.id 
-                        ? {
-                            ...vehicle,
-                            speed: data.speed,
-                            current_location_lat: data.latitude,
-                            current_location_lng: data.longitude,
-                            status: data.status,
-                            last_update: data.timestamp
-                        }
-                        : vehicle
-                )
-            );
-        });
-
-        setSocket(newSocket);
-
-        // Очистка при размонтировании
-        return () => {
-            newSocket.close();
-        };
-    }, []);
-
-    // Начальная загрузка данных
-    useEffect(() => {
-        fetchVehicles();
+        return () => clearInterval(interval);
     }, []);
 
     const fetchVehicles = async () => {
@@ -64,6 +28,12 @@ const DashboardPage: React.FC = () => {
             const response = await fetch(`${API_URL}/api/vehicles/`);
             const data = await response.json();
             setVehicles(data);
+            
+            // Обновляем выбранную машину если она есть
+            if (selectedVehicle) {
+                const updated = data.find(v => v.id === selectedVehicle.id);
+                if (updated) setSelectedVehicle(updated);
+            }
         } catch (error) {
             console.error('Error:', error);
         }
@@ -71,18 +41,13 @@ const DashboardPage: React.FC = () => {
 
     const handleVehicleClick = (vehicle: Vehicle) => {
         setSelectedVehicle(vehicle);
-        setVehicleListOpen(false); // Закрываем список при выборе машины
-    };
-
-    // Обработчик клика по карте
-    const handleMapClick = () => {
         setVehicleListOpen(false);
     };
 
     return (
         <>
             <Navbar />
-            <div className="fixed inset-0 z-0 pt-16" onClick={handleMapClick}> {/* Добавили pt-16 для отступа под навбар */}
+            <div className="fixed inset-0 z-0 pt-16">
                 <Map 
                     vehicles={vehicles} 
                     selectedVehicle={selectedVehicle}
@@ -90,10 +55,9 @@ const DashboardPage: React.FC = () => {
                 />
             </div>
 
-            {/* Кнопка списка машин */}
             <button
                 onClick={(e) => {
-                    e.stopPropagation(); // Предотвращаем всплытие клика
+                    e.stopPropagation();
                     setVehicleListOpen(!vehicleListOpen);
                 }}
                 className="fixed left-4 bottom-4 z-[100] bg-gray-800 dark:bg-gray-700 p-3 rounded-full shadow-lg hover:shadow-xl transition-all hover:bg-gray-700 dark:hover:bg-gray-600"
@@ -103,12 +67,8 @@ const DashboardPage: React.FC = () => {
                 </svg>
             </button>
 
-            {/* Список машин */}
             {vehicleListOpen && (
-                <div 
-                    className="fixed left-0 top-16 bottom-0 w-80 bg-gray-800 shadow-lg z-[100]"
-                    onClick={(e) => e.stopPropagation()} // Предотвращаем закрытие при клике на список
-                >
+                <div className="fixed left-0 top-16 bottom-0 w-80 bg-gray-800 shadow-lg z-[100]">
                     <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
                         <VehicleList 
                             vehicles={vehicles}
