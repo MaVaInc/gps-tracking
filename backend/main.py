@@ -326,6 +326,10 @@ async def get_vehicle_route(
     end_time: datetime = None,
     db: Session = Depends(get_db)
 ):
+    print(f"Fetching route for vehicle {vehicle_id}")
+    print(f"Start time: {start_time}")
+    print(f"End time: {end_time}")
+    
     query = db.query(LocationHistory)\
         .filter(LocationHistory.vehicle_id == vehicle_id)\
         .order_by(LocationHistory.timestamp.asc())
@@ -336,13 +340,16 @@ async def get_vehicle_route(
         query = query.filter(LocationHistory.timestamp <= end_time)
     
     locations = query.all()
+    print(f"Found {len(locations)} points")
     
-    return [{
+    result = [{
         "lat": loc.lat,
         "lng": loc.lng,
         "speed": loc.speed,
         "timestamp": loc.timestamp.isoformat()
     } for loc in locations]
+    
+    return result
 
 class ControlAction(BaseModel):
     action: str
@@ -374,7 +381,7 @@ async def receive_binary_data(request: Request, db: Session = Depends(get_db)):
         raw_data = await request.body()
         data = zlib.decompress(raw_data)
         
-        # Распаковываем с учетом нового флага
+        # Распаковываем с учетом флага
         device_id, lat, lng, speed, timestamp, save_history = struct.unpack("16sddfI?", data)
         device_id = device_id.decode('utf-8').strip('\0').lower()
         

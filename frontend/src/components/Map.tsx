@@ -33,13 +33,18 @@ const Map: React.FC<MapProps> = ({ vehicles, selectedVehicle, onVehicleClick, se
 
     const fetchRoute = async (vehicleId: number, date: Date) => {
         try {
+            // Используем 2025 год для тестовых данных
             const startTime = new Date(date);
+            startTime.setFullYear(2025);
             startTime.setHours(0, 0, 0, 0);
             
             const endTime = new Date(date);
+            endTime.setFullYear(2025);
             endTime.setHours(23, 59, 59, 999);
 
-            console.log('Fetching route for vehicle:', vehicleId, 'date:', date);
+            console.log('Fetching route for vehicle:', vehicleId);
+            console.log('Start time:', startTime.toISOString());
+            console.log('End time:', endTime.toISOString());
             
             const response = await fetch(
                 `${API_URL}/api/vehicles/${vehicleId}/route?` + 

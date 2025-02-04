@@ -63,8 +63,8 @@ def update_position(vehicle: Vehicle):
     vehicle.current_lat += math.sin(vehicle.direction) * speed_deg
     vehicle.current_lng += math.cos(vehicle.direction) * speed_deg
     
-    # Получаем текущее время
-    timestamp = int(datetime.now().timestamp())
+    # Получаем текущее время (изменим на текущую дату)
+    timestamp = int(datetime.now().replace(year=datetime.now().year).timestamp())
     
     # Упаковываем данные
     binary_data = pack_gps_data(
@@ -73,7 +73,7 @@ def update_position(vehicle: Vehicle):
         vehicle.current_lng,
         speed,
         timestamp,
-        save_history=vehicle.should_save_history()  # Добавляем флаг сохранения
+        save_history=vehicle.should_save_history()  # Проверяем что этот флаг есть
     )
     
     try:
