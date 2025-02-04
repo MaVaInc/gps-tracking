@@ -1,0 +1,2 @@
+const inactiveItemClass = "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer p-3 rounded-lg transition-all";
+const activeItemClass = "bg-blue-500 text-white p-3 rounded-lg cursor-pointer transition-all"; 
