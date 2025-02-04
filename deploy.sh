@@ -5,6 +5,8 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
+REPO_URL="https://github.com/MaVaInc/gps-tracking.git"
+
 echo -e "${GREEN}Starting deployment...${NC}"
 
 # Обновляем систему
@@ -100,7 +102,7 @@ sudo nginx -t
 
 # Получаем SSL сертификат
 echo -e "${GREEN}Getting SSL certificate...${NC}"
-sudo certbot --nginx -d wais-kurierdienst.de --non-interactive --agree-tos --email your-email@example.com
+sudo certbot --nginx -d wais-kurierdienst.de --non-interactive --agree-tos --email mavainc@gmail.com
 
 # Перезапускаем сервисы
 echo -e "${GREEN}Restarting services...${NC}"
@@ -108,5 +110,8 @@ sudo systemctl daemon-reload
 sudo systemctl enable gps-backend
 sudo systemctl restart gps-backend
 sudo systemctl restart nginx
+
+echo -e "${GREEN}Cloning repository...${NC}"
+git clone $REPO_URL /var/www/gps
 
 echo -e "${GREEN}Deployment completed!${NC}" 
