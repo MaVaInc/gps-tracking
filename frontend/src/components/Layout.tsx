@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { useLocation, Link } from 'react-router-dom';
-import AdminSidebar from './AdminSidebar';
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -8,65 +7,45 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
     const location = useLocation();
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const isAdminPage = location.pathname.startsWith('/admin');
-    const isInventoryPage = location.pathname.startsWith('/inventory');
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white">
-            <div className="bg-gray-800 border-b border-gray-700">
-                <div className="container mx-auto px-4">
-                    <div className="flex items-center h-16">
-                        {/* Бургер меню */}
-                        <button
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="text-gray-400 hover:text-white"
-                        >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                            </svg>
-                        </button>
-
-                        <div className="flex items-center space-x-4 ml-4">
-                            <span className="text-xl font-bold text-purple-500">
-                                {isAdminPage ? 'Administration' : 'Inventar'}
+        <div>
+            <nav className="fixed top-0 left-0 right-0 bg-gray-800 shadow-lg z-50">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="flex justify-between h-16">
+                        <div className="flex items-center">
+                            <span className="text-white text-xl font-bold">
+                                WAIS Kurierdienst GPS Tracking
                             </span>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Мобильное меню */}
-            {isMobileMenuOpen && (
-                <div className="bg-gray-800 border-b border-gray-700">
-                    <div className="container mx-auto px-4 py-2">
-                        <nav className="space-y-2">
+                        <div className="flex items-center space-x-4">
                             <Link
-                                to="/dashboard"
-                                className="block px-3 py-2 rounded text-gray-300 hover:bg-gray-700 hover:text-white"
+                                to="/"
+                                className={`px-3 py-2 rounded-md text-sm font-medium ${
+                                    location.pathname === '/'
+                                        ? 'bg-gray-900 text-white'
+                                        : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                                }`}
                             >
                                 Dashboard
                             </Link>
                             <Link
                                 to="/admin"
-                                className="block px-3 py-2 rounded text-gray-300 hover:bg-gray-700 hover:text-white"
+                                className={`px-3 py-2 rounded-md text-sm font-medium ${
+                                    location.pathname === '/admin'
+                                        ? 'bg-gray-900 text-white'
+                                        : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                                }`}
                             >
-                                Administration
+                                Admin
                             </Link>
-                            <Link
-                                to="/inventory"
-                                className="block px-3 py-2 rounded text-gray-300 hover:bg-gray-700 hover:text-white"
-                            >
-                                Inventar
-                            </Link>
-                        </nav>
+                        </div>
                     </div>
                 </div>
-            )}
-
-            <div className="container mx-auto px-4 py-8">
+            </nav>
+            <main className="pt-16">
                 {children}
-            </div>
+            </main>
         </div>
     );
 };
