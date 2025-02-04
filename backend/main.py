@@ -340,54 +340,6 @@ async def control_vehicle(vehicle_id: int, action: ControlAction, db: Session = 
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/location_update")
-async def location_update(data: dict, db: Session = Depends(get_db)):
-    try:
-        # Находим машину по device_id
-        vehicle = db.query(Vehicle).filter(Vehicle.device_id == data["device_id"]).first()
-        if not vehicle:
-            raise HTTPException(status_code=404, detail="Vehicle not found")
-            
-        # Обновляем позицию и скорость
-        vehicle.current_location_lat = data["latitude"]
-        vehicle.current_location_lng = data["longitude"]
-        vehicle.speed = data["speed"]
-        vehicle.last_update = datetime.fromisoformat(data["timestamp"])
-        
-        # Сохраняем историю
-        history = LocationHistory(
-            vehicle_id=vehicle.id,
-            lat=data["latitude"],
-            lng=data["longitude"],
-            speed=data["speed"],
-            timestamp=datetime.fromisoformat(data["timestamp"])
-        )
-        db.add(history)
-        db.commit()
-        
-        return {"status": "success"}
-        
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/status_update")
-async def status_update(data: dict, db: Session = Depends(get_db)):
-    try:
-        vehicle = db.query(Vehicle).filter(Vehicle.device_id == data["device_id"]).first()
-        if not vehicle:
-            raise HTTPException(status_code=404, detail="Vehicle not found")
-            
-        vehicle.status = data["status"]
-        vehicle.last_update = datetime.fromisoformat(data["timestamp"])
-        
-        db.commit()
-        return {"status": "success"}
-        
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-
 # Запускаем приложение с Socket.IO
 if __name__ == "__main__":
     import uvicorn
