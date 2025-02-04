@@ -5,7 +5,7 @@ import requests
 from datetime import datetime
 
 # Конфигурация
-API_URL = 'http://94.156.114.240:8000/api'  # URL API сервера
+API_URL = 'http://94.156.114.240:8001'  # URL аналитического сервера
 
 VEHICLES = [
     {
@@ -45,7 +45,7 @@ def update_position(vehicle: dict):
     
     # Отправляем данные через API
     try:
-        response = requests.post(f'{API_URL}/tracker/location', json={
+        response = requests.post(f'{API_URL}/location', json={
             'device_id': vehicle['device_id'],
             'latitude': vehicle['current_lat'],
             'longitude': vehicle['current_lng'],
@@ -63,7 +63,7 @@ def simulate_disconnect():
             vehicle["enabled"] = not vehicle["enabled"]
             
             try:
-                response = requests.post(f'{API_URL}/tracker/status', json={
+                response = requests.post(f'{API_URL}/status', json={
                     'device_id': vehicle['device_id'],
                     'enabled': vehicle['enabled']
                 })
