@@ -42,24 +42,27 @@ const Map: React.FC<MapProps> = ({ vehicles, selectedVehicle, onVehicleClick, se
             endTime.setFullYear(2025);
             endTime.setHours(23, 59, 59, 999);
 
-            console.log('Fetching route for vehicle:', vehicleId);
-            console.log('Start time:', startTime.toISOString());
-            console.log('End time:', endTime.toISOString());
+            const url = `${API_URL}/api/vehicles/${vehicleId}/route?` + 
+                       `start_time=${startTime.toISOString()}&` +
+                       `end_time=${endTime.toISOString()}`;
+
+            console.log('Fetching route:', url);
             
-            const response = await fetch(
-                `${API_URL}/api/vehicles/${vehicleId}/route?` + 
-                `start_time=${startTime.toISOString()}&` +
-                `end_time=${endTime.toISOString()}`
-            );
+            const response = await fetch(url);
             
-            if (!response.ok) throw new Error('Failed to fetch route');
+            if (!response.ok) {
+                const error = await response.text();
+                console.error('Failed to fetch route:', error);
+                throw new Error(`Failed to fetch route: ${error}`);
+            }
             
             const points: LocationPoint[] = await response.json();
-            console.log('Received route points:', points);
+            console.log('Received route points:', points.length, 'First point:', points[0]);
             setRoutePoints(points);
 
             if (points.length > 0 && mapRef.current) {
                 const bounds = L.latLngBounds(points.map(p => [p.lat, p.lng]));
+                console.log('Setting map bounds:', bounds.toString());
                 mapRef.current.fitBounds(bounds, { padding: [50, 50] });
             }
         } catch (error) {
@@ -68,8 +71,10 @@ const Map: React.FC<MapProps> = ({ vehicles, selectedVehicle, onVehicleClick, se
     };
 
     useEffect(() => {
+        console.log('Selected vehicle changed:', selectedVehicle?.id);
+        console.log('Selected date:', selectedDate);
+        
         if (selectedVehicle) {
-            console.log('Selected vehicle changed:', selectedVehicle.id);
             fetchRoute(selectedVehicle.id, selectedDate || new Date());
         } else {
             setRoutePoints([]);
@@ -88,24 +93,28 @@ const Map: React.FC<MapProps> = ({ vehicles, selectedVehicle, onVehicleClick, se
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             
-            {/* Отрисовка маршрута */}
             {routePoints.length > 0 && (
-                <Polyline
-                    positions={routePoints.map(point => [point.lat, point.lng])}
-                    color="#2563eb"
-                    weight={3}
-                    opacity={0.7}
-                />
+                <>
+                    <Polyline
+                        positions={routePoints.map(point => [point.lat, point.lng])}
+                        color="#2563eb"
+                        weight={3}
+                        opacity={0.7}
+                    />
+                    {console.log('Rendering route with', routePoints.length, 'points')}
+                </>
             )}
 
-            {/* Маркеры транспортных средств */}
             {vehicles.map((vehicle) => (
                 <Marker
                     key={vehicle.id}
                     position={[vehicle.current_location_lat, vehicle.current_location_lng]}
                     icon={vehicle.status === 'online' ? greenIcon : redIcon}
                     eventHandlers={{
-                        click: () => onVehicleClick(vehicle)
+                        click: () => {
+                            console.log('Vehicle clicked:', vehicle.id);
+                            onVehicleClick(vehicle);
+                        }
                     }}
                 >
                     <Popup>
