@@ -13,6 +13,7 @@ from math import radians, sin, cos, sqrt, atan2
 from dotenv import load_dotenv
 import os
 from sqlalchemy import create_engine
+from pydantic import BaseModel
 
 load_dotenv()
 
@@ -314,6 +315,30 @@ def get_vehicle(vehicle_id: int, db: Session = Depends(get_db)):
     if vehicle is None:
         raise HTTPException(status_code=404, detail="Vehicle not found")
     return vehicle
+
+class ControlAction(BaseModel):
+    action: str
+
+@app.post("/api/vehicles/{vehicle_id}/control")
+async def control_vehicle(vehicle_id: int, action: ControlAction, db: Session = Depends(get_db)):
+    vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    
+    try:
+        if action.action == "disable":
+            vehicle.status = "disabled"
+        elif action.action == "enable":
+            vehicle.status = "online"
+        else:
+            raise HTTPException(status_code=400, detail="Invalid action")
+        
+        db.commit()
+        return {"status": "success", "vehicle_status": vehicle.status}
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Запускаем приложение с Socket.IO
 if __name__ == "__main__":
