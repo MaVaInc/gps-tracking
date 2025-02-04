@@ -1,19 +1,18 @@
-import socket
-import time
 import random
 import math
+import time
+import requests
 import struct
+import zlib
 from datetime import datetime
-from tracker_protocol import pack_location, pack_status
 
 # Конфигурация
-ANALYTICS_HOST = '94.156.114.240'  # IP сервера
-ANALYTICS_PORT = 8001  # Порт аналитического сервиса
+API_URL = 'http://94.156.114.240:8000'  # Используем IP вместо домена
 
 VEHICLES = [
     {
         "id": 1,
-        "device_id": "eqw1054",
+        "device_id": "eqw1054",  # Убрал префикс b-, так как в БД его нет
         "current_lat": 52.52,
         "current_lng": 13.405,
         "direction": random.uniform(0, 2 * math.pi),
@@ -29,12 +28,20 @@ VEHICLES = [
     }
 ]
 
-def send_packet(sock: socket.socket, data: bytes):
-    """Отправляем пакет с длиной впереди"""
-    length = len(data)
-    sock.send(struct.pack('!H', length) + data)
+def pack_gps_data(device_id: str, lat: float, lng: float, speed: float, timestamp: int) -> bytes:
+    """Упаковываем GPS данные в бинарный формат"""
+    # Формат: device_id (16 bytes), lat (double), lng (double), speed (float), timestamp (uint32)
+    binary_data = struct.pack("16sddfI", 
+        device_id.encode(), # 16 байт для ID
+        lat,               # 8 байт для широты
+        lng,               # 8 байт для долготы
+        speed,            # 4 байта для скорости
+        timestamp         # 4 байта для времени
+    )
+    # Сжимаем данные
+    return zlib.compress(binary_data)
 
-def update_position(sock: socket.socket, vehicle: dict):
+def update_position(vehicle: dict):
     if not vehicle["enabled"]:
         return
 
@@ -51,56 +58,73 @@ def update_position(sock: socket.socket, vehicle: dict):
     vehicle["current_lat"] += math.sin(vehicle["direction"]) * speed_deg
     vehicle["current_lng"] += math.cos(vehicle["direction"]) * speed_deg
     
+    # Получаем текущее время в Unix timestamp
+    timestamp = int(datetime.now().timestamp())
+    
+    # Упаковываем данные в бинарный формат
+    binary_data = pack_gps_data(
+        vehicle['device_id'],
+        vehicle['current_lat'],
+        vehicle['current_lng'],
+        speed,
+        timestamp
+    )
+    
     # Отправляем бинарные данные
     try:
-        data = pack_location(
-            vehicle["device_id"],
-            vehicle["current_lat"],
-            vehicle["current_lng"],
-            speed
+        print(f"""
+Отправка данных для {vehicle['device_id']}:
+- Позиция: {vehicle['current_lat']}, {vehicle['current_lng']}
+- Скорость: {speed}
+- Timestamp: {timestamp}
+        """)
+        
+        response = requests.post(
+            f'{API_URL}/gps/binary_data',
+            data=binary_data,
+            headers={'Content-Type': 'application/octet-stream'}
         )
-        send_packet(sock, data)
-        print(f"Location sent for {vehicle['device_id']}")
+        print(f"Location sent for {vehicle['device_id']}: {response.status_code}")
+        if response.status_code != 200:
+            print(f"Error response: {response.text}")
         
     except Exception as e:
         print(f"Error sending location for {vehicle['device_id']}: {e}")
 
-def simulate_disconnect(sock: socket.socket):
-    """Периодически симулируем отключение случайной машины"""
-    for vehicle in VEHICLES:
-        if random.random() < 0.01:  # 1% шанс отключения
-            vehicle["enabled"] = not vehicle["enabled"]
-            
-            try:
-                data = pack_status(vehicle["device_id"], vehicle["enabled"])
-                send_packet(sock, data)
-                print(f"Status update for {vehicle['device_id']}: {'online' if vehicle['enabled'] else 'disabled'}")
-                
-            except Exception as e:
-                print(f"Error sending status for {vehicle['device_id']}: {e}")
+def check_server():
+    try:
+        response = requests.get(f'{API_URL}/health')
+        if response.status_code == 200:
+            print(f"Server is available at {API_URL}")
+            return True
+    except Exception as e:
+        print(f"Server is not available: {e}")
+        return False
 
 def main():
     print("Starting GPS tracker simulator...")
+    print(f"Connecting to server at: {API_URL}")
     
-    # Создаем TCP соединение
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((ANALYTICS_HOST, ANALYTICS_PORT))
+    # Проверяем доступность сервера
+    if not check_server():
+        print("Cannot connect to server. Please check the server address and try again.")
+        return
     
     try:
         while True:
             # Обновляем позиции всех машин
             for vehicle in VEHICLES:
-                update_position(sock, vehicle)
-            
-            # Симулируем возможные отключения
-            simulate_disconnect(sock)
+                try:
+                    update_position(vehicle)
+                except Exception as e:
+                    print(f"Error updating position for {vehicle['device_id']}: {e}")
             
             # Ждем перед следующим обновлением
             time.sleep(5)
     except KeyboardInterrupt:
         print("\nStopping simulator...")
-    finally:
-        sock.close()
+    except Exception as e:
+        print(f"Unexpected error: {e}")
 
 if __name__ == "__main__":
     main() 

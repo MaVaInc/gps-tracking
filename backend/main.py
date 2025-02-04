@@ -433,6 +433,10 @@ async def receive_binary_data(request: Request, db: Session = Depends(get_db)):
         print(f"Stack trace:", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
 # Запускаем приложение с Socket.IO
 if __name__ == "__main__":
     import uvicorn
