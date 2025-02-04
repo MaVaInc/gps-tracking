@@ -10,7 +10,7 @@ from tracker_protocol import unpack_packet
 # Конфигурация
 HOST = '0.0.0.0'
 PORT = 8001
-DB_URL = "sqlite:////var/www/gps/test.db"
+DB_URL = "sqlite:///./test.db"
 
 engine = create_engine(DB_URL)
 SessionLocal = sessionmaker(bind=engine)
