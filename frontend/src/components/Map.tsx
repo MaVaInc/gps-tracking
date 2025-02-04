@@ -39,6 +39,8 @@ const Map: React.FC<MapProps> = ({ vehicles, selectedVehicle, onVehicleClick, se
             const endTime = new Date(date);
             endTime.setHours(23, 59, 59, 999);
 
+            console.log('Fetching route for vehicle:', vehicleId, 'date:', date);
+            
             const response = await fetch(
                 `${API_URL}/api/vehicles/${vehicleId}/route?` + 
                 `start_time=${startTime.toISOString()}&` +
@@ -48,9 +50,9 @@ const Map: React.FC<MapProps> = ({ vehicles, selectedVehicle, onVehicleClick, se
             if (!response.ok) throw new Error('Failed to fetch route');
             
             const points: LocationPoint[] = await response.json();
+            console.log('Received route points:', points);
             setRoutePoints(points);
 
-            // Центрируем карту на маршруте
             if (points.length > 0 && mapRef.current) {
                 const bounds = L.latLngBounds(points.map(p => [p.lat, p.lng]));
                 mapRef.current.fitBounds(bounds, { padding: [50, 50] });
@@ -62,6 +64,7 @@ const Map: React.FC<MapProps> = ({ vehicles, selectedVehicle, onVehicleClick, se
 
     useEffect(() => {
         if (selectedVehicle) {
+            console.log('Selected vehicle changed:', selectedVehicle.id);
             fetchRoute(selectedVehicle.id, selectedDate || new Date());
         } else {
             setRoutePoints([]);

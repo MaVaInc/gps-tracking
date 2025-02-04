@@ -65,7 +65,6 @@ const DashboardPage: React.FC = () => {
                 />
             </div>
 
-            {/* Добавляем выбор даты */}
             {selectedVehicle && (
                 <div className="fixed right-4 top-20 z-[100] bg-white p-4 rounded-lg shadow-lg">
                     <h3 className="font-bold mb-2">Route Date</h3>
