@@ -72,6 +72,7 @@ class Part(Base):
     quantity = Column(Integer, default=1)
     min_quantity = Column(Integer, default=1)
     price = Column(Float, default=0.0)
+    location = Column(String, nullable=True)  # Добавляем поле location
     compatible_vehicles = Column(JSON, default=list)  # Хранит список device_ids как JSON
 
 class ServiceRecord(Base):
