@@ -7,9 +7,9 @@ export interface Vehicle {
     status: string;
     speed: number;
     daily_mileage: number;
-    current_location_lat?: number | null;
-    current_location_lng?: number | null;
-    last_update?: string | null;
+    current_location_lat: number;
+    current_location_lng: number;
+    last_update: string;
     // Поля для обслуживания
     mileage: number;
     last_oil_change?: number | null;
@@ -58,4 +58,16 @@ export interface RouteHistory {
         timestamp: Date;
         speed: number;
     }[];
+}
+
+export interface LocationPoint {
+    lat: number;
+    lng: number;
+    speed: number;
+    timestamp: string;
+}
+
+export interface RouteData {
+    points: LocationPoint[];
+    bounds: [[number, number], [number, number]]; // [[minLat, minLng], [maxLat, maxLng]]
 } 

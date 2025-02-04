@@ -319,6 +319,31 @@ def get_vehicle(vehicle_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Vehicle not found")
     return vehicle
 
+@app.get("/api/vehicles/{vehicle_id}/route")
+async def get_vehicle_route(
+    vehicle_id: int, 
+    start_time: datetime = None,
+    end_time: datetime = None,
+    db: Session = Depends(get_db)
+):
+    query = db.query(LocationHistory)\
+        .filter(LocationHistory.vehicle_id == vehicle_id)\
+        .order_by(LocationHistory.timestamp.asc())
+    
+    if start_time:
+        query = query.filter(LocationHistory.timestamp >= start_time)
+    if end_time:
+        query = query.filter(LocationHistory.timestamp <= end_time)
+    
+    locations = query.all()
+    
+    return [{
+        "lat": loc.lat,
+        "lng": loc.lng,
+        "speed": loc.speed,
+        "timestamp": loc.timestamp.isoformat()
+    } for loc in locations]
+
 class ControlAction(BaseModel):
     action: str
 
@@ -346,93 +371,42 @@ async def control_vehicle(vehicle_id: int, action: ControlAction, db: Session = 
 @app.post("/gps/binary_data")
 async def receive_binary_data(request: Request, db: Session = Depends(get_db)):
     try:
-        print("Получен новый GPS пакет")
         raw_data = await request.body()
-        print(f"Размер сжатых данных: {len(raw_data)} байт")
-        
         data = zlib.decompress(raw_data)
-        print(f"Размер распакованных данных: {len(data)} байт")
         
-        device_id, lat, lng, speed, timestamp = struct.unpack("16sddfI", data)
-        device_id = device_id.decode('utf-8').strip('\0').lower().replace('b-', '')
+        # Распаковываем с учетом нового флага
+        device_id, lat, lng, speed, timestamp, save_history = struct.unpack("16sddfI?", data)
+        device_id = device_id.decode('utf-8').strip('\0').lower()
         
-        print(f"""
-Распакованные данные:
-- device_id: {device_id}
-- lat: {lat}
-- lng: {lng}
-- speed: {speed}
-- timestamp: {datetime.fromtimestamp(timestamp)}
-        """)
-
         vehicle = db.query(Vehicle).filter(Vehicle.device_id == device_id).first()
         if not vehicle:
-            print(f"Vehicle not found: {device_id}")
-            print("Available vehicles in DB:")
-            vehicles = db.query(Vehicle).all()
-            for v in vehicles:
-                print(f"- {v.device_id}: {v.name}")
             raise HTTPException(status_code=404, detail=f"Vehicle not found: {device_id}")
-        
-        print(f"Найдено транспортное средство: {vehicle.name} (ID: {vehicle.id})")
-        
-        # Получаем начало текущего дня
-        today_start = datetime.combine(datetime.today(), time.min)
-        
-        # Получаем последнюю запись о местоположении за сегодня
-        last_location = db.query(LocationHistory)\
-            .filter(LocationHistory.vehicle_id == vehicle.id)\
-            .filter(LocationHistory.timestamp >= today_start)\
-            .order_by(LocationHistory.timestamp.desc())\
-            .first()
 
-        # Сохраняем новую запись о местоположении
-        new_location = LocationHistory(
-            vehicle_id=vehicle.id,
-            lat=lat,
-            lng=lng,
-            timestamp=datetime.fromtimestamp(timestamp)
-        )
-        db.add(new_location)
-
-        # Обновляем данные только если машина не отключена
+        # Обновляем текущие координаты
         if vehicle.status != 'disabled':
-            # Рассчитываем пройденное расстояние
-            if last_location:
-                distance = calculate_distance(
-                    last_location.lat,
-                    last_location.lng,
-                    lat,
-                    lng
-                )
-                # Обновляем дневной пробег
-                vehicle.daily_mileage = (vehicle.daily_mileage or 0) + distance
-                # Обновляем общий пробег
-                vehicle.mileage = (vehicle.mileage or 0) + distance
-
-            # Обновляем текущие координаты и статус
             vehicle.current_location_lat = lat
             vehicle.current_location_lng = lng
             vehicle.speed = speed
             vehicle.last_update = datetime.fromtimestamp(timestamp)
             vehicle.status = 'online'
-        
-        print(f"""
-Обновлены данные для {vehicle.name}:
-- Новая позиция: {lat}, {lng}
-- Скорость: {speed}
-- Статус: {vehicle.status}
-- Пробег: {vehicle.mileage}
-- Дневной пробег: {vehicle.daily_mileage}
-        """)
-        
+
+            # Сохраняем в историю только если флаг установлен
+            if save_history:
+                new_location = LocationHistory(
+                    vehicle_id=vehicle.id,
+                    lat=lat,
+                    lng=lng,
+                    speed=speed,
+                    timestamp=datetime.fromtimestamp(timestamp)
+                )
+                db.add(new_location)
+                print(f"Saved location history point for {vehicle.name}")
+
         db.commit()
         return {"status": "success"}
         
     except Exception as e:
         print(f"Error processing GPS data: {e}")
-        print("Stack trace:")
-        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/health")

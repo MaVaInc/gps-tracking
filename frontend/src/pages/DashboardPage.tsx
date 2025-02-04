@@ -4,12 +4,15 @@ import Map from '../components/Map';
 import VehicleList from '../components/VehicleList';
 import Layout from '../components/Layout';
 import Navbar from '../components/Navbar';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
 import { API_URL } from '../config';
 
 const DashboardPage: React.FC = () => {
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
     const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
     const [vehicleListOpen, setVehicleListOpen] = useState(false);
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
     // Периодическое обновление данных
     useEffect(() => {
@@ -58,8 +61,22 @@ const DashboardPage: React.FC = () => {
                     vehicles={vehicles} 
                     selectedVehicle={selectedVehicle}
                     onVehicleClick={handleVehicleClick}
+                    selectedDate={selectedDate}
                 />
             </div>
+
+            {/* Добавляем выбор даты */}
+            {selectedVehicle && (
+                <div className="fixed right-4 top-20 z-[100] bg-white p-4 rounded-lg shadow-lg">
+                    <h3 className="font-bold mb-2">Route Date</h3>
+                    <DatePicker
+                        selected={selectedDate}
+                        onChange={(date: Date) => setSelectedDate(date)}
+                        dateFormat="dd.MM.yyyy"
+                        className="border rounded p-2"
+                    />
+                </div>
+            )}
 
             <div className="fixed left-4 bottom-4 z-[100] flex flex-col items-start space-y-2">
                 <button
