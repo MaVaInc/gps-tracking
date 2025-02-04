@@ -12,8 +12,16 @@ import json
 from math import radians, sin, cos, sqrt, atan2
 from dotenv import load_dotenv
 import os
+from sqlalchemy import create_engine
 
 load_dotenv()
+
+# В начале файла
+DEBUG = True  # Включаем дебаг
+
+# Обновляем подключение к БД
+SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}, echo=True)  # echo=True для логов SQL
 
 # Создаем экземпляр Socket.IO
 sio = socketio.AsyncServer(
@@ -36,7 +44,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Создаем таблицы
+# Создаем таблицы при старте
 Base.metadata.create_all(bind=engine)
 
 # Dependency
