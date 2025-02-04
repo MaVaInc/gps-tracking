@@ -14,8 +14,8 @@ from backend.models import Vehicle, LocationHistory
 
 # Убедимся, что путь к БД абсолютный
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_PATH = os.path.join(BASE_DIR, "test.db")
-print(f"Using database at: {DB_PATH}")
+SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+print(f"Using database at: {SQLALCHEMY_DATABASE_URL}")
 
 app = FastAPI()
 
