@@ -61,25 +61,28 @@ const DashboardPage: React.FC = () => {
                 />
             </div>
 
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    setVehicleListOpen(!vehicleListOpen);
-                }}
-                className="fixed left-4 bottom-4 z-[100] bg-gray-800 dark:bg-gray-700 p-3 rounded-full shadow-lg hover:shadow-xl transition-all hover:bg-gray-700 dark:hover:bg-gray-600"
-            >
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-            </button>
+            <div className="fixed left-4 bottom-4 z-[100] flex flex-col items-start space-y-2">
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setVehicleListOpen(!vehicleListOpen);
+                    }}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                    <span>Fahrzeuge anzeigen</span>
+                </button>
+            </div>
 
             {vehicleListOpen && (
                 <div className="fixed left-0 top-16 bottom-0 w-80 bg-gray-800 shadow-lg z-[100]">
                     <div className="flex justify-between items-center p-4 border-b border-gray-700">
-                        <h2 className="text-white font-bold">Vehicles</h2>
+                        <h2 className="text-white font-bold">Fahrzeuge</h2>
                         <button
                             onClick={() => setVehicleListOpen(false)}
-                            className="text-gray-400 hover:text-white"
+                            className="text-gray-400 hover:text-white transition-colors"
                         >
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

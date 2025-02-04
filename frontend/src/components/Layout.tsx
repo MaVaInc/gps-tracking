@@ -15,15 +15,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     <div className="flex justify-between h-16">
                         <div className="flex items-center">
                             <span className="text-white text-xl font-bold">
-                                WAIS Kurierdienst GPS Tracking
+                                WAIS Kurierdienst
                             </span>
                         </div>
                         <div className="flex items-center space-x-4">
                             <Link
                                 to="/"
-                                className={`px-3 py-2 rounded-md text-sm font-medium ${
+                                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                                     location.pathname === '/'
-                                        ? 'bg-gray-900 text-white'
+                                        ? 'bg-blue-600 text-white'
                                         : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                                 }`}
                             >
@@ -31,9 +31,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             </Link>
                             <Link
                                 to="/admin"
-                                className={`px-3 py-2 rounded-md text-sm font-medium ${
+                                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                                     location.pathname === '/admin'
-                                        ? 'bg-gray-900 text-white'
+                                        ? 'bg-blue-600 text-white'
                                         : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                                 }`}
                             >
