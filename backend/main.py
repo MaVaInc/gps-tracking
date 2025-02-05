@@ -17,6 +17,7 @@ from pydantic import BaseModel
 import struct
 import zlib
 import traceback
+import socket
 
 load_dotenv()
 
@@ -42,7 +43,7 @@ socket_app = socketio.ASGIApp(sio, app)
 # Добавляем CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv('CORS_ORIGINS', 'http://localhost:5173').split(','),
+    allow_origins=['https://wais-kurierdienst.de'],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -361,12 +362,27 @@ async def control_vehicle(vehicle_id: int, action: ControlAction, db: Session = 
         raise HTTPException(status_code=404, detail="Vehicle not found")
     
     try:
+        # Обновляем статус в БД
         if action.action == "disable":
             vehicle.status = "disabled"
         elif action.action == "enable":
             vehicle.status = "online"
         else:
             raise HTTPException(status_code=400, detail="Invalid action")
+        
+        # Отправляем UDP команду на устройство
+        if vehicle.last_ip:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                message = json.dumps({
+                    "action": action.action,
+                    "device_id": vehicle.device_id,
+                    "timestamp": int(time.time())
+                }).encode()
+                sock.sendto(message, (vehicle.last_ip, 8888))
+                print(f"Sent control command to {vehicle.device_id} at {vehicle.last_ip}")
+            except Exception as e:
+                print(f"Failed to send UDP command: {e}")
         
         db.commit()
         return {"status": "success", "vehicle_status": vehicle.status}
@@ -416,6 +432,10 @@ async def receive_binary_data(request: Request, db: Session = Depends(get_db)):
                 db.add(new_location)
                 print(f"Saved location history point for {vehicle.name}")
 
+        # Сохраняем IP устройства
+        client_host = request.client.host
+        vehicle.last_ip = client_host
+        
         db.commit()
         return {"status": "success"}
         
@@ -426,6 +446,17 @@ async def receive_binary_data(request: Request, db: Session = Depends(get_db)):
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
+
+@app.get("/api/devices/{device_id}/status")
+async def get_device_status(device_id: str, db: Session = Depends(get_db)):
+    vehicle = db.query(Vehicle).filter(Vehicle.device_id == device_id).first()
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    
+    return {
+        "enabled": vehicle.status != "disabled",
+        "timestamp": datetime.now().timestamp()
+    }
 
 # Запускаем приложение с Socket.IO
 if __name__ == "__main__":

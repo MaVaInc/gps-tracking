@@ -26,6 +26,9 @@ device_enabled = True
 MIN_DISTANCE = 0.0001  # Минимальное изменение координат для отправки
 MIN_SEND_INTERVAL = 5  # Минимальный интервал между отправками в секундах
 
+DEVICE_ID = "your_device_id"
+API_URL = "https://wais-kurierdienst.de"
+
 def connect_wifi():
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
@@ -59,7 +62,7 @@ def send_data(lat, lng, speed):
     """Отправка данных в сжатом бинарном формате"""
     try:
         # Формируем бинарный пакет
-        device_id = "B-EQW1054".ljust(16, '\0')  # Ваш ID устройства
+        device_id = DEVICE_ID.ljust(16, '\0')
         timestamp = time.time()
         
         packet = struct.pack(
@@ -73,7 +76,7 @@ def send_data(lat, lng, speed):
         
         # Отправляем данные
         response = urequests.post(
-            f"{SERVER_URL}/gps/binary_data",
+            f"{API_URL}/gps/binary_data",
             data=packet,
             headers={'Content-Type': 'application/octet-stream'}
         )
@@ -107,6 +110,36 @@ def control_thread():
         check_control_commands()
         time.sleep(5)
 
+def check_status():
+    try:
+        response = urequests.get(f"{API_URL}/api/devices/{DEVICE_ID}/status")
+        if response.status_code == 200:
+            data = response.json()
+            return data["enabled"]
+    except:
+        return True  # В случае ошибки продолжаем работать
+    return True
+
+def send_gps_data(lat, lng, speed):
+    if not check_status():
+        return  # Не отправляем данные если устройство выключено
+        
+    try:
+        data = {
+            "device_id": DEVICE_ID,
+            "lat": lat,
+            "lng": lng,
+            "speed": speed,
+            "timestamp": time.time()
+        }
+        response = urequests.post(
+            f"{API_URL}/gps/data",
+            json=data
+        )
+        print("GPS data sent:", response.status_code)
+    except Exception as e:
+        print("Error sending GPS data:", e)
+
 def main():
     wlan = connect_wifi()
     _thread.start_new_thread(control_thread, ())
@@ -138,7 +171,14 @@ def main():
                     last_position["speed"] = speed
                     last_send_time = current_time
         
-        time.sleep(0.1)
+        # Получаем GPS данные
+        lat, lng, speed = get_gps_data()  # Ваша функция получения GPS данных
+        
+        # Проверяем статус и отправляем данные
+        send_gps_data(lat, lng, speed)
+        
+        # Ждем 5 секунд
+        time.sleep(5)
 
 if __name__ == "__main__":
     try:

@@ -3,4 +3,4 @@ const API_BASE = window.location.hostname === 'localhost'
     ? 'http://localhost:8000' 
     : `${isSecure ? 'https' : 'http'}://${window.location.hostname}`;
 
-export const API_URL = API_BASE; 
+export const API_URL = 'https://wais-kurierdienst.de'; 

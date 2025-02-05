@@ -62,6 +62,8 @@ class Vehicle(Base):
     service_history = relationship("ServiceRecord", back_populates="vehicle")
     location_history = relationship("LocationHistory", back_populates="vehicle")
 
+    last_ip = Column(String)  # IP адрес устройства
+
 class Part(Base):
     __tablename__ = "parts"
     __table_args__ = {'extend_existing': True}

@@ -11,14 +11,12 @@ interface VehicleListProps {
 const VehicleList: React.FC<VehicleListProps> = ({ vehicles, selectedVehicle, onVehicleClick }) => {
     const [loadingStates, setLoadingStates] = useState<{[key: number]: boolean}>({});
 
-    const handleControlClick = async (vehicleId: number, action: 'enable' | 'disable') => {
+    const handleControl = async (vehicleId: number, action: 'enable' | 'disable') => {
         try {
-            setLoadingStates(prev => ({ ...prev, [vehicleId]: true }));
-            
             const response = await fetch(`${API_URL}/api/vehicles/${vehicleId}/control`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ action })
             });
@@ -30,8 +28,6 @@ const VehicleList: React.FC<VehicleListProps> = ({ vehicles, selectedVehicle, on
             await new Promise(resolve => setTimeout(resolve, 500));
         } catch (error) {
             console.error('Error controlling vehicle:', error);
-        } finally {
-            setLoadingStates(prev => ({ ...prev, [vehicleId]: false }));
         }
     };
 
@@ -97,7 +93,7 @@ const VehicleList: React.FC<VehicleListProps> = ({ vehicles, selectedVehicle, on
 
                     <div className="px-3 pb-3">
                         <button
-                            onClick={() => handleControlClick(
+                            onClick={() => handleControl(
                                 vehicle.id,
                                 vehicle.status === 'disabled' ? 'enable' : 'disable'
                             )}
