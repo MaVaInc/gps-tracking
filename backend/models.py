@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Table, JSON
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Table, JSON, Boolean
 from sqlalchemy.orm import relationship
 from backend.database import Base
 from datetime import datetime
@@ -64,6 +64,8 @@ class Vehicle(Base):
 
     last_ip = Column(String)  # IP адрес устройства
 
+    acc = Column(Boolean, default=False)   # Состояние ACC (accessory)
+
 class Part(Base):
     __tablename__ = "parts"
     __table_args__ = {'extend_existing': True}
@@ -100,6 +102,7 @@ class LocationHistory(Base):
     lat = Column(Float)
     lng = Column(Float)
     speed = Column(Float)
+    acc = Column(Boolean)  # Состояние ACC в момент записи
     timestamp = Column(DateTime, default=datetime.utcnow)
     
     vehicle = relationship("Vehicle", back_populates="location_history")

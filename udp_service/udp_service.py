@@ -12,7 +12,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.database import Base
-from backend.models import Vehicle, LocationHistory
+from backend.models import Vehicle, Loca6666666666666666tionHistory
 
 # Настройки UDP сервера
 UDP_IP = "0.0.0.0"  # Слушаем на всех интерфейсах
